@@ -1,0 +1,208 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <title>RAAVI AR Museum</title>
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            font-family: Arial, sans-serif;
+            background: #000;
+        }
+        #startScreen {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.95);
+            z-index: 1000;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            text-align: center;
+        }
+        h1 {
+            color: white;
+            font-size: 28px;
+            margin: 20px;
+        }
+        p {
+            color: #aaa;
+            margin: 10px 20px;
+        }
+        #startBtn {
+            background: #9b59b6;
+            color: white;
+            border: none;
+            padding: 16px 40px;
+            font-size: 20px;
+            border-radius: 50px;
+            margin: 30px;
+            cursor: pointer;
+            font-weight: bold;
+        }
+        #startBtn:active {
+            transform: scale(0.97);
+        }
+        #status {
+            position: fixed;
+            bottom: 20px;
+            left: 20px;
+            right: 20px;
+            background: rgba(0,0,0,0.8);
+            color: #0f0;
+            padding: 12px;
+            border-radius: 10px;
+            text-align: center;
+            font-size: 12px;
+            z-index: 100;
+            font-family: monospace;
+        }
+        .hidden {
+            display: none !important;
+        }
+        a-scene {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+        }
+    </style>
+    
+    <!-- فایل‌های لوکال شما -->
+    <script src="aframe.min.js"></script>
+    <script src="mindar-image-aframe.prod.js"></script>
+</head>
+<body>
+
+    <div id="startScreen">
+        <div style="font-size: 80px;">🎯</div>
+        <h1>RAAVI واقعیت افزوده</h1>
+        <p>دوربین را به سمت نشانه بگیرید</p>
+        <button id="startBtn">شروع AR</button>
+        <p style="font-size: 12px; color: #666;">پس از کلیک، اجازه دسترسی به دوربین را بدهید</p>
+    </div>
+
+    <div id="status">✅ آماده - دکمه را بزنید</div>
+
+    <a-scene
+        id="scene"
+        mindar-image="imageTargetSrc: targets1.mind; autoStart: false;"
+        vr-mode-ui="enabled: false"
+        embedded
+    >
+        <a-assets>
+            <video
+                id="arVideo"
+                src="Raavi_AR-final2.webm"
+                preload="auto"
+                loop
+                muted
+                playsinline
+            ></video>
+        </a-assets>
+        
+        <a-camera></a-camera>
+        
+        <a-entity id="targetEntity" mindar-image-target="targetIndex: 0">
+            <a-video
+                id="videoPlane"
+                src="#arVideo"
+                width="1.2"
+                height="0.675"
+                position="0 0 0"
+                visible="false"
+            ></a-video>
+        </a-entity>
+    </a-scene>
+
+    <script>
+        const startScreen = document.getElementById('startScreen');
+        const startBtn = document.getElementById('startBtn');
+        const statusDiv = document.getElementById('status');
+        const scene = document.getElementById('scene');
+        const video = document.getElementById('arVideo');
+        const targetEntity = document.getElementById('targetEntity');
+        const videoPlane = document.getElementById('videoPlane');
+        
+        let arStarted = false;
+        
+        function setStatus(text, isError = false) {
+            statusDiv.innerHTML = text;
+            statusDiv.style.color = isError ? '#ff8888' : '#88ff88';
+            console.log(text);
+        }
+        
+        async function startAR() {
+            if (arStarted) return;
+            
+            setStatus('📱 در حال راه‌اندازی...');
+            
+            try {
+                // منتظر لود scene
+                if (!scene.hasLoaded) {
+                    setStatus('⏳ منتظر بارگذاری...');
+                    await new Promise((resolve) => {
+                        scene.addEventListener('loaded', resolve);
+                    });
+                }
+                
+                // گرفتن MindAR system
+                let mindarSystem = null;
+                for (let i = 0; i < 20; i++) {
+                    mindarSystem = scene.systems['mindar-image-system'];
+                    if (mindarSystem) break;
+                    await new Promise(r => setTimeout(r, 200));
+                }
+                
+                if (!mindarSystem) {
+                    throw new Error('سیستم MindAR بارگذاری نشد');
+                }
+                
+                setStatus('🔐 درخواست دسترسی به دوربین...');
+                
+                // درخواست دوربین
+                const stream = await navigator.mediaDevices.getUserMedia({ video: true });
+                stream.getTracks().forEach(track => track.stop());
+                
+                setStatus('🚀 شروع AR...');
+                await mindarSystem.start();
+                arStarted = true;
+                startScreen.classList.add('hidden');
+                setStatus('✅ دوربین فعال شد - نشانه را بگیرید');
+                
+            } catch(error) {
+                console.error(error);
+                setStatus('❌ ' + error.message, true);
+            }
+        }
+        
+        // رویدادهای target
+        if (targetEntity) {
+            targetEntity.addEventListener('targetFound', () => {
+                setStatus('🎉 نشانه پیدا شد!');
+                videoPlane.setAttribute('visible', 'true');
+                video.play().catch(e => console.log('Video error:', e));
+            });
+            
+            targetEntity.addEventListener('targetLost', () => {
+                setStatus('👋 نشانه خارج شد');
+                videoPlane.setAttribute('visible', 'false');
+                video.pause();
+                video.currentTime = 0;
+            });
+        }
+        
+        startBtn.addEventListener('click', startAR);
+        video.load();
+        
+        setStatus('✅ آماده - دکمه را بزنید');
+        console.log('App loaded. URL:', window.location.href);
+    </script>
+</body>
+</html>

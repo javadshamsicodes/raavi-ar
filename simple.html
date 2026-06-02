@@ -1,0 +1,27 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Simple Test</title>
+    <style>
+        body { background: #000; color: #0f0; text-align: center; padding: 50px; }
+        button { background: #9b59b6; color: white; padding: 15px 30px; font-size: 18px; border: none; border-radius: 10px; }
+    </style>
+</head>
+<body>
+    <h1>تست ساده</h1>
+    <button id="btn">کلیک کن</button>
+    <p id="msg">منتظر کلیک...</p>
+
+    <script>
+        const btn = document.getElementById('btn');
+        const msg = document.getElementById('msg');
+        
+        btn.onclick = function() {
+            msg.innerHTML = '✅ دکمه کار می‌کند!';
+            alert('دکمه کار کرد!');
+        };
+    </script>
+</body>
+</html>

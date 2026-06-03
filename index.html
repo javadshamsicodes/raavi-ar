@@ -4,11 +4,6 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
     <title>RAAVI AR Museum</title>
-    
-    <!-- استفاده از CDNهای جایگزین -->
-    <script src="https://cdn.skypack.dev/aframe"></script>
-    <script src="https://cdn.skypack.dev/mindar-image-aframe"></script>
-    
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
         body { background: #000; font-family: 'Segoe UI', sans-serif; overflow: hidden; }
@@ -61,12 +56,25 @@
         .error { color: #ff8888 !important; }
         .hidden { display: none !important; }
         
-        a-scene {
+        video, canvas {
             position: fixed;
             top: 0;
             left: 0;
             width: 100%;
             height: 100%;
+            object-fit: cover;
+        }
+        
+        #overlayVideo {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            object-fit: contain;
+            z-index: 20;
+            display: none;
+            background: rgba(0,0,0,0.8);
         }
     </style>
 </head>
@@ -82,105 +90,84 @@
 
     <div id="status">✅ آماده - دکمه را بزنید</div>
 
-    <a-scene
-        id="scene"
-        mindar-image="imageTargetSrc: targets.mind; autoStart: false;"
-        vr-mode-ui="enabled: false"
-        embedded
-    >
-        <a-assets>
-            <video
-                id="arVideo"
-                src="Raavi_AR-final2.webm"
-                preload="auto"
-                loop
-                muted
-                playsinline
-            ></video>
-        </a-assets>
-        
-        <a-camera></a-camera>
-        
-        <a-entity id="targetEntity" mindar-image-target="targetIndex: 0">
-            <a-video
-                id="videoPlane"
-                src="#arVideo"
-                width="1.2"
-                height="0.675"
-                position="0 0 0"
-                visible="false"
-            ></a-video>
-        </a-entity>
-    </a-scene>
+    <video id="camera" autoplay playsinline muted></video>
+    <video id="overlayVideo" src="Raavi_AR-final2.webm" loop muted playsinline></video>
 
     <script>
-        (function() {
-            const startScreen = document.getElementById('startScreen');
-            const startBtn = document.getElementById('startBtn');
-            const statusDiv = document.getElementById('status');
-            const scene = document.getElementById('scene');
-            const video = document.getElementById('arVideo');
-            const targetEntity = document.getElementById('targetEntity');
-            const videoPlane = document.getElementById('videoPlane');
+        const startScreen = document.getElementById('startScreen');
+        const startBtn = document.getElementById('startBtn');
+        const statusDiv = document.getElementById('status');
+        const cameraVideo = document.getElementById('camera');
+        const overlayVideo = document.getElementById('overlayVideo');
+        
+        let cameraStream = null;
+        let isPlaying = false;
+        
+        function setStatus(msg, isError = false) {
+            statusDiv.innerHTML = msg;
+            statusDiv.style.color = isError ? '#ff8888' : '#88ff88';
+            console.log(msg);
+        }
+        
+        async function startCamera() {
+            setStatus('📱 در حال راه‌اندازی دوربین پشت...');
             
-            let arStarted = false;
-            
-            function setStatus(msg, isError = false) {
-                statusDiv.innerHTML = msg;
-                statusDiv.style.color = isError ? '#ff8888' : '#88ff88';
-                console.log(msg);
+            try {
+                // گرفتن دوربین پشت
+                const devices = await navigator.mediaDevices.enumerateDevices();
+                const videoDevices = devices.filter(d => d.kind === 'videoinput');
+                
+                let backCamera = videoDevices.find(d => 
+                    d.label.toLowerCase().includes('back') ||
+                    d.label.toLowerCase().includes('rear') ||
+                    d.label.toLowerCase().includes('environment')
+                );
+                
+                const constraints = backCamera 
+                    ? { video: { deviceId: { exact: backCamera.deviceId } } }
+                    : { video: { facingMode: 'environment' } };
+                
+                cameraStream = await navigator.mediaDevices.getUserMedia(constraints);
+                cameraVideo.srcObject = cameraStream;
+                
+                setStatus('✅ دوربین فعال شد - برای تست روی صفحه کلیک کنید');
+                return true;
+                
+            } catch(err) {
+                setStatus('❌ خطا: ' + err.message, true);
+                return false;
             }
+        }
+        
+        function playVideo() {
+            if (isPlaying) return;
+            isPlaying = true;
+            overlayVideo.style.display = 'block';
+            overlayVideo.currentTime = 0;
+            overlayVideo.play();
+            setStatus('🎉 ویدئو در حال پخش');
             
-            startBtn.onclick = async function() {
-                if (arStarted) return;
-                
-                setStatus('📱 در حال راه‌اندازی...');
-                
-                try {
-                    if (!scene.hasLoaded) {
-                        await new Promise(r => scene.addEventListener('loaded', r));
-                    }
-                    
-                    let mindar = null;
-                    for (let i = 0; i < 30; i++) {
-                        mindar = scene.systems['mindar-image-system'];
-                        if (mindar) break;
-                        await new Promise(r => setTimeout(r, 200));
-                    }
-                    
-                    if (!mindar) throw new Error('MindAR پیدا نشد');
-                    
-                    setStatus('🔐 درخواست دوربین...');
-                    const stream = await navigator.mediaDevices.getUserMedia({ video: true });
-                    stream.getTracks().forEach(t => t.stop());
-                    
-                    setStatus('🚀 شروع AR...');
-                    await mindar.start();
-                    arStarted = true;
-                    startScreen.classList.add('hidden');
-                    setStatus('✅ دوربین فعال - نشانه را بگیرید');
-                    
-                } catch(err) {
-                    setStatus('❌ ' + err.message, true);
+            setTimeout(() => {
+                if (!overlayVideo.paused) {
+                    overlayVideo.pause();
+                    overlayVideo.style.display = 'none';
+                    isPlaying = false;
+                    setStatus('👋 ویدئو تمام شد - دوباره کلیک کنید');
                 }
-            };
+            }, 5000);
+        }
+        
+        startBtn.onclick = async function() {
+            startScreen.classList.add('hidden');
+            const cameraOk = await startCamera();
             
-            targetEntity.addEventListener('targetFound', () => {
-                setStatus('🎉 نشانه پیدا شد!');
-                videoPlane.setAttribute('visible', 'true');
-                video.play().catch(e => console.log(e));
-            });
-            
-            targetEntity.addEventListener('targetLost', () => {
-                setStatus('👋 نشانه خارج شد');
-                videoPlane.setAttribute('visible', 'false');
-                video.pause();
-                video.currentTime = 0;
-            });
-            
-            video.load();
-            setStatus('✅ آماده - دکمه را بزنید');
-        })();
+            if (cameraOk) {
+                setStatus('🎯 برای تست، روی صفحه کلیک کنید تا ویدئو پخش شود');
+                document.body.onclick = playVideo;
+            }
+        };
+        
+        setStatus('✅ آماده - دکمه را بزنید');
     </script>
 </body>
 </html>

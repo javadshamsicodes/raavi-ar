@@ -4,6 +4,13 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
     <title>RAAVI AR Museum</title>
+    
+    <!-- PWA Manifest -->
+    <link rel="manifest" href="manifest.json">
+    <meta name="theme-color" content="#667eea">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
         body { background: #000; font-family: 'Segoe UI', sans-serif; overflow: hidden; }
@@ -150,6 +157,13 @@
                 document.body.onclick = playVideo;
             }
         };
+        
+        // ثبت Service Worker برای PWA
+        if ('serviceWorker' in navigator) {
+            navigator.serviceWorker.register('/raavi-ar/sw.js')
+                .then(reg => console.log('Service Worker registered:', reg))
+                .catch(err => console.log('Service Worker error:', err));
+        }
         
         setStatus('✅ آماده - دکمه را بزنید');
     </script>

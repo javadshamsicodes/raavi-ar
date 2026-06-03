@@ -56,7 +56,7 @@
         .error { color: #ff8888 !important; }
         .hidden { display: none !important; }
         
-        video, canvas {
+        video {
             position: fixed;
             top: 0;
             left: 0;
@@ -66,15 +66,10 @@
         }
         
         #overlayVideo {
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            object-fit: contain;
             z-index: 20;
-            display: none;
+            object-fit: contain;
             background: rgba(0,0,0,0.8);
+            display: none;
         }
     </style>
 </head>
@@ -110,23 +105,11 @@
         }
         
         async function startCamera() {
-            setStatus('📱 در حال راه‌اندازی دوربین پشت...');
+            setStatus('📱 درخواست دسترسی به دوربین...');
             
             try {
-                // گرفتن دوربین پشت
-                const devices = await navigator.mediaDevices.enumerateDevices();
-                const videoDevices = devices.filter(d => d.kind === 'videoinput');
-                
-                let backCamera = videoDevices.find(d => 
-                    d.label.toLowerCase().includes('back') ||
-                    d.label.toLowerCase().includes('rear') ||
-                    d.label.toLowerCase().includes('environment')
-                );
-                
-                const constraints = backCamera 
-                    ? { video: { deviceId: { exact: backCamera.deviceId } } }
-                    : { video: { facingMode: 'environment' } };
-                
+                // روش ساده و استاندارد
+                const constraints = { video: { facingMode: 'environment' } };
                 cameraStream = await navigator.mediaDevices.getUserMedia(constraints);
                 cameraVideo.srcObject = cameraStream;
                 
@@ -135,6 +118,7 @@
                 
             } catch(err) {
                 setStatus('❌ خطا: ' + err.message, true);
+                console.error(err);
                 return false;
             }
         }
@@ -162,7 +146,7 @@
             const cameraOk = await startCamera();
             
             if (cameraOk) {
-                setStatus('🎯 برای تست، روی صفحه کلیک کنید تا ویدئو پخش شود');
+                setStatus('🎯 برای پخش ویدئو، روی صفحه کلیک کنید');
                 document.body.onclick = playVideo;
             }
         };

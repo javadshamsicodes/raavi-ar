@@ -1,171 +1,171 @@
 <!DOCTYPE html>
 <html lang="fa" dir="rtl">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-    <title>RAAVI AR Museum</title>
-    
-    <!-- PWA Manifest -->
-    <link rel="manifest" href="manifest.json">
-    <meta name="theme-color" content="#667eea">
-    <meta name="apple-mobile-web-app-capable" content="yes">
-    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-    
-    <style>
-        * { margin: 0; padding: 0; box-sizing: border-box; }
-        body { background: #000; font-family: 'Segoe UI', sans-serif; overflow: hidden; }
-        
-        #startScreen {
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background: rgba(0,0,0,0.95);
-            z-index: 1000;
-            display: flex;
-            flex-direction: column;
-            justify-content: center;
-            align-items: center;
-            text-align: center;
-        }
-        
-        h1 { color: white; font-size: 28px; margin: 20px; }
-        p { color: #aaa; margin: 10px 20px; line-height: 1.5; }
-        
-        #startBtn {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            color: white;
-            border: none;
-            padding: 16px 40px;
-            font-size: 20px;
-            border-radius: 50px;
-            margin: 30px;
-            cursor: pointer;
-            font-weight: bold;
-        }
-        
-        #status {
-            position: fixed;
-            bottom: 20px;
-            left: 20px;
-            right: 20px;
-            background: rgba(0,0,0,0.85);
-            color: #0f0;
-            padding: 12px;
-            border-radius: 12px;
-            text-align: center;
-            font-size: 13px;
-            z-index: 100;
-            font-family: monospace;
-        }
-        
-        .error { color: #ff8888 !important; }
-        .hidden { display: none !important; }
-        
-        video {
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            object-fit: cover;
-        }
-        
-        #overlayVideo {
-            z-index: 20;
-            object-fit: contain;
-            background: rgba(0,0,0,0.8);
-            display: none;
-        }
-    </style>
+  <meta charset="utf-8">
+  <title>RAAVI AR</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+
+  <link rel="manifest" href="manifest.json">
+  <meta name="theme-color" content="#667eea">
+
+  <script src="https://aframe.io/releases/1.5.0/aframe.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/mind-ar@1.2.5/dist/mindar-image-aframe.prod.js"></script>
+
+  <style>
+    html, body {
+      margin: 0;
+      width: 100%;
+      height: 100%;
+      overflow: hidden;
+      background: #000;
+      font-family: Arial, sans-serif;
+    }
+
+    #startScreen {
+      position: fixed;
+      inset: 0;
+      background: rgba(0,0,0,0.95);
+      z-index: 9999;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      text-align: center;
+      color: white;
+    }
+
+    #startBtn {
+      padding: 15px 35px;
+      border: none;
+      border-radius: 30px;
+      background: #667eea;
+      color: white;
+      font-size: 18px;
+      font-weight: bold;
+      margin-top: 25px;
+    }
+
+    #status {
+      position: fixed;
+      bottom: 20px;
+      left: 20px;
+      right: 20px;
+      z-index: 999;
+      background: rgba(0,0,0,0.75);
+      color: #fff;
+      padding: 10px;
+      border-radius: 10px;
+      text-align: center;
+      font-size: 14px;
+    }
+
+    .hidden {
+      display: none !important;
+    }
+  </style>
 </head>
+
 <body>
 
-    <div id="startScreen">
-        <div style="font-size: 80px;">🎯</div>
-        <h1>RAAVI واقعیت افزوده</h1>
-        <p>دوربین را به سمت نشانه بگیرید</p>
-        <button id="startBtn">شروع تجربه AR</button>
-        <p style="font-size: 12px; color: #666; margin-top: 20px;">پس از کلیک، اجازه دسترسی به دوربین را بدهید</p>
-    </div>
+<div id="startScreen">
+  <div style="font-size:70px;">🎯</div>
+  <h1>RAAVI واقعیت افزوده</h1>
+  <p>برای شروع، اجازه دسترسی به دوربین را بدهید.</p>
+  <button id="startBtn">شروع تجربه AR</button>
+</div>
 
-    <div id="status">✅ آماده - دکمه را بزنید</div>
+<div id="status">آماده برای شروع</div>
 
-    <video id="camera" autoplay playsinline muted></video>
-    <video id="overlayVideo" src="Raavi_AR-final2.webm" loop muted playsinline></video>
+<a-scene
+  mindar-image="imageTargetSrc: targets.mind; autoStart: false;"
+  color-space="sRGB"
+  renderer="colorManagement: true, physicallyCorrectLights"
+  vr-mode-ui="enabled: false"
+  device-orientation-permission-ui="enabled: false"
+  embedded
+>
+  <a-assets>
+    <video
+      id="arVideo"
+      src="Raavi_AR-final2.webm"
+      preload="auto"
+      loop
+      muted
+      playsinline
+      webkit-playsinline
+      crossorigin="anonymous">
+    </video>
+  </a-assets>
 
-    <script>
-        const startScreen = document.getElementById('startScreen');
-        const startBtn = document.getElementById('startBtn');
-        const statusDiv = document.getElementById('status');
-        const cameraVideo = document.getElementById('camera');
-        const overlayVideo = document.getElementById('overlayVideo');
-        
-        let cameraStream = null;
-        let isPlaying = false;
-        
-        function setStatus(msg, isError = false) {
-            statusDiv.innerHTML = msg;
-            statusDiv.style.color = isError ? '#ff8888' : '#88ff88';
-            console.log(msg);
-        }
-        
-        async function startCamera() {
-            setStatus('📱 درخواست دسترسی به دوربین...');
-            
-            try {
-                // روش ساده و استاندارد
-                const constraints = { video: { facingMode: 'environment' } };
-                cameraStream = await navigator.mediaDevices.getUserMedia(constraints);
-                cameraVideo.srcObject = cameraStream;
-                
-                setStatus('✅ دوربین فعال شد - برای تست روی صفحه کلیک کنید');
-                return true;
-                
-            } catch(err) {
-                setStatus('❌ خطا: ' + err.message, true);
-                console.error(err);
-                return false;
-            }
-        }
-        
-        function playVideo() {
-            if (isPlaying) return;
-            isPlaying = true;
-            overlayVideo.style.display = 'block';
-            overlayVideo.currentTime = 0;
-            overlayVideo.play();
-            setStatus('🎉 ویدئو در حال پخش');
-            
-            setTimeout(() => {
-                if (!overlayVideo.paused) {
-                    overlayVideo.pause();
-                    overlayVideo.style.display = 'none';
-                    isPlaying = false;
-                    setStatus('👋 ویدئو تمام شد - دوباره کلیک کنید');
-                }
-            }, 5000);
-        }
-        
-        startBtn.onclick = async function() {
-            startScreen.classList.add('hidden');
-            const cameraOk = await startCamera();
-            
-            if (cameraOk) {
-                setStatus('🎯 برای پخش ویدئو، روی صفحه کلیک کنید');
-                document.body.onclick = playVideo;
-            }
-        };
-        
-        // ثبت Service Worker برای PWA
-        if ('serviceWorker' in navigator) {
-            navigator.serviceWorker.register('/raavi-ar/sw.js')
-                .then(reg => console.log('Service Worker registered:', reg))
-                .catch(err => console.log('Service Worker error:', err));
-        }
-        
-        setStatus('✅ آماده - دکمه را بزنید');
-    </script>
+  <a-camera position="0 0 0" look-controls="enabled: false"></a-camera>
+
+  <a-entity id="target" mindar-image-target="targetIndex: 0">
+    <a-video
+      id="videoPlane"
+      src="#arVideo"
+      width="1"
+      height="0.5625"
+      position="0 0 0">
+    </a-video>
+  </a-entity>
+</a-scene>
+
+<script>
+  const startScreen = document.getElementById("startScreen");
+  const startBtn = document.getElementById("startBtn");
+  const statusDiv = document.getElementById("status");
+  const sceneEl = document.querySelector("a-scene");
+  const video = document.getElementById("arVideo");
+  const target = document.getElementById("target");
+
+  function setStatus(text) {
+    statusDiv.textContent = text;
+  }
+
+  startBtn.addEventListener("click", async () => {
+    if (!window.isSecureContext) {
+      setStatus("خطا: سایت باید با HTTPS باز شود.");
+      return;
+    }
+
+    try {
+      await video.play();
+      video.pause();
+
+      await sceneEl.systems["mindar-image-system"].start();
+
+      startScreen.classList.add("hidden");
+      setStatus("دوربین را به سمت تصویر هدف بگیرید");
+    } catch (err) {
+      console.error(err);
+      setStatus("خطا در اجرای AR یا دسترسی دوربین");
+    }
+  });
+
+  target.addEventListener("targetFound", async () => {
+    setStatus("تصویر شناسایی شد");
+    try {
+      video.currentTime = 0;
+      await video.play();
+    } catch (err) {
+      console.error(err);
+    }
+  });
+
+  target.addEventListener("targetLost", () => {
+    setStatus("تصویر از دید دوربین خارج شد");
+    video.pause();
+  });
+
+  video.addEventListener("loadedmetadata", () => {
+    const ratio = video.videoHeight / video.videoWidth;
+    document.getElementById("videoPlane").setAttribute("height", ratio);
+  });
+
+  if ("serviceWorker" in navigator && location.protocol === "https:") {
+    navigator.serviceWorker.register("sw.js").catch(console.log);
+  }
+</script>
+
 </body>
 </html>

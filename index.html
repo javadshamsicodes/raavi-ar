@@ -1,9 +1,10 @@
 <!DOCTYPE html>
 <html lang="fa" dir="rtl">
 <head>
-  <meta charset="utf-8">
-  <title>RAAVI AR</title>
+  <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+
+  <title>RAAVI AR</title>
 
   <link rel="manifest" href="manifest.json">
   <meta name="theme-color" content="#667eea">
@@ -17,8 +18,8 @@
       width: 100%;
       height: 100%;
       overflow: hidden;
-      background: #000;
       font-family: Arial, sans-serif;
+      background: #000;
     }
 
     #startScreen {
@@ -35,6 +36,7 @@
     }
 
     #startBtn {
+      margin-top: 25px;
       padding: 15px 35px;
       border: none;
       border-radius: 30px;
@@ -42,7 +44,7 @@
       color: white;
       font-size: 18px;
       font-weight: bold;
-      margin-top: 25px;
+      cursor: pointer;
     }
 
     #status {
@@ -52,7 +54,7 @@
       right: 20px;
       z-index: 999;
       background: rgba(0,0,0,0.75);
-      color: #fff;
+      color: white;
       padding: 10px;
       border-radius: 10px;
       text-align: center;
@@ -68,15 +70,15 @@
 <body>
 
 <div id="startScreen">
-  <div style="font-size:70px;">🎯</div>
-  <h1>RAAVI واقعیت افزوده</h1>
-  <p>برای شروع، اجازه دسترسی به دوربین را بدهید.</p>
+  <h1>🎯 RAAVI AR</h1>
+  <p>برای شروع روی دکمه زیر کلیک کنید</p>
   <button id="startBtn">شروع تجربه AR</button>
 </div>
 
-<div id="status">آماده برای شروع</div>
+<div id="status">آماده برای شروع...</div>
 
 <a-scene
+  id="scene"
   mindar-image="imageTargetSrc: targets.mind; autoStart: false;"
   color-space="sRGB"
   renderer="colorManagement: true, physicallyCorrectLights"
@@ -97,9 +99,9 @@
     </video>
   </a-assets>
 
-  <a-camera position="0 0 0" look-controls="enabled: false"></a-camera>
+  <a-camera position="0 0 0" look-controls="enabled:false"></a-camera>
 
-  <a-entity id="target" mindar-image-target="targetIndex: 0">
+  <a-entity id="target" mindar-image-target="targetIndex:0">
     <a-video
       id="videoPlane"
       src="#arVideo"
@@ -108,63 +110,103 @@
       position="0 0 0">
     </a-video>
   </a-entity>
+
 </a-scene>
 
 <script>
-  const startScreen = document.getElementById("startScreen");
-  const startBtn = document.getElementById("startBtn");
-  const statusDiv = document.getElementById("status");
-  const sceneEl = document.querySelector("a-scene");
-  const video = document.getElementById("arVideo");
-  const target = document.getElementById("target");
 
-  function setStatus(text) {
-    statusDiv.textContent = text;
+const startBtn = document.getElementById("startBtn");
+const startScreen = document.getElementById("startScreen");
+const statusBox = document.getElementById("status");
+const sceneEl = document.getElementById("scene");
+const videoEl = document.getElementById("arVideo");
+const targetEl = document.getElementById("target");
+
+function setStatus(text){
+  statusBox.innerHTML = text;
+  console.log(text);
+}
+
+startBtn.addEventListener("click", async () => {
+
+  setStatus("در حال راه‌اندازی AR ...");
+
+  if (!window.isSecureContext) {
+    setStatus("❌ سایت باید با HTTPS باز شود");
+    return;
   }
 
-  startBtn.addEventListener("click", async () => {
-    if (!window.isSecureContext) {
-      setStatus("خطا: سایت باید با HTTPS باز شود.");
+  try {
+
+    await videoEl.play();
+    videoEl.pause();
+
+    const mindarSystem =
+      sceneEl.systems["mindar-image-system"];
+
+    if (!mindarSystem) {
+      setStatus("❌ MindAR بارگذاری نشد");
       return;
     }
 
-    try {
-      await video.play();
-      video.pause();
+    await mindarSystem.start();
 
-      await sceneEl.systems["mindar-image-system"].start();
+    startScreen.classList.add("hidden");
 
-      startScreen.classList.add("hidden");
-      setStatus("دوربین را به سمت تصویر هدف بگیرید");
-    } catch (err) {
-      console.error(err);
-      setStatus("خطا در اجرای AR یا دسترسی دوربین");
-    }
-  });
+    setStatus("📷 دوربین را به سمت تصویر هدف بگیرید");
 
-  target.addEventListener("targetFound", async () => {
-    setStatus("تصویر شناسایی شد");
-    try {
-      video.currentTime = 0;
-      await video.play();
-    } catch (err) {
-      console.error(err);
-    }
-  });
+  } catch(error) {
 
-  target.addEventListener("targetLost", () => {
-    setStatus("تصویر از دید دوربین خارج شد");
-    video.pause();
-  });
+    console.error(error);
+    setStatus("❌ " + error.message);
 
-  video.addEventListener("loadedmetadata", () => {
-    const ratio = video.videoHeight / video.videoWidth;
-    document.getElementById("videoPlane").setAttribute("height", ratio);
-  });
-
-  if ("serviceWorker" in navigator && location.protocol === "https:") {
-    navigator.serviceWorker.register("sw.js").catch(console.log);
   }
+
+});
+
+targetEl.addEventListener("targetFound", async () => {
+
+  setStatus("✅ تصویر شناسایی شد");
+
+  try {
+
+    videoEl.currentTime = 0;
+    await videoEl.play();
+
+  } catch(error) {
+
+    console.error(error);
+
+  }
+
+});
+
+targetEl.addEventListener("targetLost", () => {
+
+  setStatus("📷 تصویر از دید دوربین خارج شد");
+  videoEl.pause();
+
+});
+
+videoEl.addEventListener("loadedmetadata", () => {
+
+  const ratio =
+    videoEl.videoHeight / videoEl.videoWidth;
+
+  document
+    .getElementById("videoPlane")
+    .setAttribute("height", ratio);
+
+});
+
+if ("serviceWorker" in navigator) {
+
+  navigator.serviceWorker
+    .register("sw.js")
+    .catch(console.error);
+
+}
+
 </script>
 
 </body>

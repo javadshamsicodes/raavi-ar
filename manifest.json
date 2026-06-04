@@ -9,13 +9,20 @@
   "orientation": "portrait",
   "icons": [
     {
-      "src": "https://javadshamsicodes.github.io/raavi-ar/icon-192.png",
+      "src": "icon-192.png",
       "sizes": "192x192",
       "type": "image/png"
     },
     {
-      "src": "https://javadshamsicodes.github.io/raavi-ar/icon-512.png",
+      "src": "icon-512.png",
       "sizes": "512x512",
+      "type": "image/png"
+    }
+  ],
+  "screenshots": [
+    {
+      "src": "screenshot-1.png",
+      "sizes": "1080x1920",
       "type": "image/png"
     }
   ]
